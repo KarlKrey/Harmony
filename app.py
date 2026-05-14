@@ -21,6 +21,7 @@ from harmonie_analyse import (
     compute_abweichungen,
     Abweichung,
     GRUPPEN,
+    ABGELEITET,
     EINHEITEN,
     STANDARD_ABWEICHUNGEN,
     FORMELN,
@@ -101,7 +102,7 @@ b_vzb = b_hzb
 ideal = compute_ideal(sna, pgnb_mm=pgnb, a_hzb=a_hzb, b_hzb=b_hzb, a_vzb=a_vzb, b_vzb=b_vzb)
 
 st.subheader("Schritt 2 – Patientenmesswerte")
-st.caption("Felder mit Idealwerten vorbelegt.")
+st.caption("ANB und ML-NL werden automatisch berechnet und müssen nicht eingegeben werden.")
 
 gemessen: dict[str, float] = {}
 for col_ui, (gruppe, variablen) in zip(st.columns(len(GRUPPEN)), GRUPPEN.items()):
@@ -112,6 +113,30 @@ for col_ui, (gruppe, variablen) in zip(st.columns(len(GRUPPEN)), GRUPPEN.items()
                 f"{var} ({EINHEITEN.get(var,'')})",
                 value=float(ideal[var]), step=0.5, key=f"inp_{var}", format="%.2f",
             )
+
+# Abgeleitete Variablen berechnen
+gemessen["ANB"]   = sna - gemessen["SNB"]
+gemessen["ML-NL"] = gemessen["ML-NSL"] - gemessen["NL-NSL"]
+
+# Anzeige der berechneten Werte
+anb_ideal_val   = ideal["ANB"]
+mlnl_ideal_val  = ideal["ML-NL"]
+anb_dev   = (gemessen["ANB"]   - anb_ideal_val)  / STANDARD_ABWEICHUNGEN["ANB"]
+mlnl_dev  = (gemessen["ML-NL"] - mlnl_ideal_val) / STANDARD_ABWEICHUNGEN["ML-NL"]
+
+col_anb, col_mlnl = st.columns(2)
+with col_anb:
+    st.info(
+        f"**ANB** = SNA ({sna:.1f}°) − SNB ({gemessen['SNB']:.1f}°) "
+        f"= **{gemessen['ANB']:.1f}°**  ·  Ideal: {anb_ideal_val:.1f}°  ·  "
+        f"Δ {anb_dev:+.2f} SD"
+    )
+with col_mlnl:
+    st.info(
+        f"**ML-NL** = ML-NSL ({gemessen['ML-NSL']:.1f}°) − NL-NSL ({gemessen['NL-NSL']:.1f}°) "
+        f"= **{gemessen['ML-NL']:.1f}°**  ·  Ideal: {mlnl_ideal_val:.1f}°  ·  "
+        f"Δ {mlnl_dev:+.2f} SD"
+    )
 
 pdb_erg = None
 if pdb_aktiv:

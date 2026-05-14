@@ -56,12 +56,18 @@ EINHEITEN: dict[str, str] = {
     "Pont-SI-UK":       "mm",
 }
 
-# Gruppierung für die Eingabemaske
+# Eingabevariablen (gemessene Werte – ANB und ML-NL werden berechnet)
 GRUPPEN: dict[str, list[str]] = {
-    "Skelettale Basis": ["SNB", "ANB", "NL-NSL", "NSBa", "ML-NSL", "ML-NL"],
+    "Skelettale Basis": ["SNB", "NL-NSL", "NSBa", "ML-NSL"],
     "Dentale Variablen": ["1-NA_deg", "1-NA_mm", "1-NB_deg", "1-NB_mm", "H-Winkel"],
     "Weichteil": ["Nasolabialwinkel", "Z-Winkel"],
     "Zahnbogen": ["HZB", "VZB", "Eckzahn-OK", "Pont-SI-OK", "Pont-SI-UK"],
+}
+
+# Abgeleitete (berechnete) Variablen
+ABGELEITET = {
+    "ANB":   "SNA − SNB",
+    "ML-NL": "ML-NSL − NL-NSL",
 }
 
 FORMELN: dict[str, str] = {
