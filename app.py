@@ -50,6 +50,15 @@ with st.sidebar:
     pgnb  = st.number_input("PgNB – Kinnprominenz (mm)", min_value=0.0, max_value=10.0, value=2.3, step=0.1)
 
     st.divider()
+    with st.expander("Zahnbogen-Konstanten (Bernabe)"):
+        st.markdown("**HZB** = a + b·SNA + b·SNB")
+        a_hzb = st.number_input("HZB – a (Achsenabschnitt)", min_value=30.0, max_value=40.0, value=35.0, step=0.5, key="a_hzb")
+        b_hzb = st.number_input("HZB – b (Koeffizient)",     min_value=0.10, max_value=0.20,  value=0.20,  step=0.01, key="b_hzb", format="%.2f")
+        st.markdown("**VZB** = a + b·SNA + b·SNB")
+        a_vzb = st.number_input("VZB – a (Achsenabschnitt)", min_value=20.0, max_value=25.0,  value=22.5,  step=0.5, key="a_vzb")
+        b_vzb = st.number_input("VZB – b (Koeffizient)",     min_value=0.10, max_value=0.20,  value=0.20,  step=0.01, key="b_vzb", format="%.2f")
+
+    st.divider()
     st.markdown("#### Legende")
     for status, farbe in STATUS_FARBE.items():
         st.markdown(
@@ -61,7 +70,7 @@ with st.sidebar:
 # ---------------------------------------------------------------------------
 # Idealwerte berechnen (immer im Hintergrund)
 # ---------------------------------------------------------------------------
-ideal = compute_ideal(sna, pgnb_mm=pgnb)
+ideal = compute_ideal(sna, pgnb_mm=pgnb, a_hzb=a_hzb, b_hzb=b_hzb, a_vzb=a_vzb, b_vzb=b_vzb)
 
 # ---------------------------------------------------------------------------
 # Schritt 2 – Patientenmesswerte eingeben

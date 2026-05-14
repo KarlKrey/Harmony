@@ -78,8 +78,8 @@ FORMELN: dict[str, str] = {
     "H-Winkel":         "1.0 × ANB − 1.3 × PgNB + 10.5",
     "Nasolabialwinkel": "145 − 0.42 × 1-NA°",
     "Z-Winkel":         "91 − (ANB × 1.2)",
-    "HZB":              "35 + 0.2 × SNA + 0.2 × SNB",
-    "VZB":              "22.5 + 0.2 × SNA + 0.2 × SNB",
+    "HZB":              "a + b × SNA + b × SNB  (a: 30–40, b: 0.1–0.2)",
+    "VZB":              "a + b × SNA + b × SNB  (a: 20–25, b: 0.1–0.2)",
     "Eckzahn-OK":       "20 + 0.2 × SNA  (nach Bernabe)",
     "Pont-SI-OK":       "VZB × 100 / 80",
     "Pont-SI-UK":       "VZB × 100 / 64",
@@ -117,11 +117,19 @@ class Abweichung:
 # Kernfunktionen
 # ---------------------------------------------------------------------------
 
-def compute_ideal(sna: float, pgnb_mm: float = 2.3) -> dict[str, float]:
+def compute_ideal(
+    sna: float,
+    pgnb_mm: float = 2.3,
+    a_hzb: float = 35.0,
+    b_hzb: float = 0.2,
+    a_vzb: float = 22.5,
+    b_vzb: float = 0.2,
+) -> dict[str, float]:
     """
-    Berechnet den individualisierten Normwert (Ideal) für alle Variablen
-    aus SNA und PgNB. Gibt nur die Variablen zurück, für die Formeln
-    und SD-Werte vorliegen.
+    Berechnet den individualisierten Normwert (Ideal) für alle Variablen.
+
+    HZB = a_hzb + b_hzb * SNA + b_hzb * SNB  (a: 30–40, b: 0.1–0.2)
+    VZB = a_vzb + b_vzb * SNA + b_vzb * SNB  (a: 20–25, b: 0.1–0.2)
     """
     snb    = 0.79 * sna + 15.56
     anb    = sna - snb
@@ -139,8 +147,8 @@ def compute_ideal(sna: float, pgnb_mm: float = 2.3) -> dict[str, float]:
     nasolabialwinkel = 145.0 - 0.42 * ina_deg
     z_winkel         = 91.0  - anb * 1.2
 
-    hzb        = 35.0 + 0.2 * sna + 0.2 * snb
-    vzb        = 22.5 + 0.2 * sna + 0.2 * snb
+    hzb        = a_hzb + b_hzb * sna + b_hzb * snb
+    vzb        = a_vzb + b_vzb * sna + b_vzb * snb
     eckzahn_ok = 20.0 + 0.2 * sna
     pont_si_ok = vzb * 100.0 / 80.0
     pont_si_uk = vzb * 100.0 / 64.0
