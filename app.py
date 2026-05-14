@@ -22,8 +22,8 @@ st.set_page_config(
     layout="wide",
 )
 
-st.title("Harmony – Individualisierte Strukturanalyse nach Segner/Hasund")
-st.caption("Normwertberechnung und 3D-Korrelationsvisualisierung")
+st.title("3D Harmonic Korrelation nach Prof. Krey")
+st.caption("Individualisierte kephalometrische Strukturanalyse nach Segner/Hasund – Normwertberechnung und 3D-Korrelationsvisualisierung")
 
 # ---------------------------------------------------------------------------
 # Sidebar: Patientenwerte
