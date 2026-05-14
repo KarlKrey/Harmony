@@ -80,7 +80,7 @@ FORMELN: dict[str, str] = {
     "Z-Winkel":         "91 − (ANB × 1.2)",
     "HZB":              "a + b × SNA + b × SNB  (a: 30–40, b: 0.1–0.2)",
     "VZB":              "a + b × SNA + b × SNB  (a: 20–25, b: 0.1–0.2)",
-    "Eckzahn-OK":       "20 + 0.2 × SNA  (nach Bernabe)",
+    "Eckzahn-OK":       "20 + b × SNA  (b=0.1, nach Bernabe)",
     "Pont-SI-OK":       "VZB × 100 / 80",
     "Pont-SI-UK":       "VZB × 100 / 64",
 }
@@ -149,7 +149,7 @@ def compute_ideal(
 
     hzb        = a_hzb + b_hzb * sna + b_hzb * snb
     vzb        = a_vzb + b_vzb * sna + b_vzb * snb
-    eckzahn_ok = 20.0 + 0.2 * sna
+    eckzahn_ok = 20.0 + b_hzb * sna
     pont_si_ok = vzb * 100.0 / 80.0
     pont_si_uk = vzb * 100.0 / 64.0
 
