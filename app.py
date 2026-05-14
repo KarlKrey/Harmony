@@ -1,157 +1,316 @@
 """
-Harmony – Interaktives Streamlit-Dashboard
-==========================================
-Individualisierte kephalometrische Strukturanalyse nach Segner/Hasund.
-Berechnet Normwerte und zeigt 3D-Korrelationsplots.
+3D Harmonic Korrelation nach Prof. Krey
+========================================
+Workflow:
+  1. SNA + PgNB eingeben → individuelle Idealwerte werden berechnet
+  2. Alle anderen Messwerte des Patienten eingeben
+  3. Abweichungen vom Ideal in SD-Einheiten werden dargestellt
 """
 
 import numpy as np
 import pandas as pd
-import plotly.express as px
 import plotly.graph_objects as go
+import plotly.express as px
 import streamlit as st
 
-from harmonie_analyse import compute_harmonie_normwerte, generate_normwerttabelle, FORMELN
+from harmonie_analyse import (
+    compute_ideal,
+    compute_abweichungen,
+    GRUPPEN,
+    EINHEITEN,
+    STANDARD_ABWEICHUNGEN,
+    FORMELN,
+)
 
 # ---------------------------------------------------------------------------
 # Seitenconfig
 # ---------------------------------------------------------------------------
 st.set_page_config(
-    page_title="Harmony – Kephalometrie",
+    page_title="3D Harmonic Korrelation",
     page_icon="🦷",
     layout="wide",
 )
 
 st.title("3D Harmonic Korrelation nach Prof. Krey")
-st.caption("Individualisierte kephalometrische Strukturanalyse nach Segner/Hasund – Normwertberechnung und 3D-Korrelationsvisualisierung")
+st.caption("Individualisierte kephalometrische Strukturanalyse nach Segner/Hasund")
 
 # ---------------------------------------------------------------------------
-# Sidebar: Patientenwerte
+# Farben für Status
+# ---------------------------------------------------------------------------
+STATUS_FARBE = {"ok": "#2ecc71", "grenz": "#f39c12", "auffällig": "#e74c3c"}
+STATUS_LABEL = {"ok": "≤ 1 SD", "grenz": "1–2 SD", "auffällig": "> 2 SD"}
+
+# ---------------------------------------------------------------------------
+# Schritt 1 – Sidebar: SNA und PgNB als Treiber
 # ---------------------------------------------------------------------------
 with st.sidebar:
-    st.header("Patientenwerte")
-    sna = st.slider("SNA (°)", min_value=62.0, max_value=103.0, value=82.0, step=0.5)
-    pgnb = st.slider("PgNB – Kinnprominenz (mm)", min_value=0.0, max_value=10.0, value=2.3, step=0.1)
-    jochbogen = st.number_input("Jochbogenbreite (mm, optional)", min_value=0.0, max_value=200.0, value=0.0, step=0.5)
-    jochbogen_val = jochbogen if jochbogen > 0 else None
+    st.header("Schritt 1 – Treibervariablen")
+    st.markdown("Aus diesen Werten wird das **individuelle Ideal** berechnet.")
+    sna   = st.number_input("SNA (°)", min_value=62.0, max_value=103.0, value=82.0, step=0.5)
+    pgnb  = st.number_input("PgNB – Kinnprominenz (mm)", min_value=0.0, max_value=10.0, value=2.3, step=0.1)
 
     st.divider()
-    st.header("3D-Plot-Achsen")
-    alle_variablen = [
-        "SNA", "SNB", "ANB",
-        "NL-NSL", "NSBa", "ML-NSL", "ML-NL",
-        "1-NA_mm", "1-NA_deg", "1-NB_mm", "1-NB_deg",
-        "H-Winkel", "Nasolabialwinkel", "Z-Winkel",
-        "HZB", "VZB", "Eckzahn-OK", "Pont-SI-OK", "Pont-SI-UK",
-    ]
-    x_var = st.selectbox("X-Achse", alle_variablen, index=0)
-    y_var = st.selectbox("Y-Achse", alle_variablen, index=2)
-    z_var = st.selectbox("Z-Achse", alle_variablen, index=11)
-    color_var = st.selectbox("Farb-Codierung", alle_variablen, index=1)
+    st.markdown("#### Legende")
+    for status, farbe in STATUS_FARBE.items():
+        st.markdown(
+            f'<span style="background:{farbe};padding:2px 8px;border-radius:4px;color:white">'
+            f'{STATUS_LABEL[status]}</span>',
+            unsafe_allow_html=True,
+        )
 
 # ---------------------------------------------------------------------------
-# Berechnungen
+# Idealwerte berechnen (immer im Hintergrund)
 # ---------------------------------------------------------------------------
-patient = compute_harmonie_normwerte(sna, pgnb_mm=pgnb, jochbogenbreite_mm=jochbogen_val)
-
-# Normwerttabelle für den gesamten SNA-Bereich (Grundlage für Plots)
-tabelle = generate_normwerttabelle(62, 103, pgnb_mm=pgnb)
-df = pd.DataFrame(tabelle)
+ideal = compute_ideal(sna, pgnb_mm=pgnb)
 
 # ---------------------------------------------------------------------------
-# Tab-Layout
+# Schritt 2 – Patientenmesswerte eingeben
 # ---------------------------------------------------------------------------
-tab1, tab2, tab3, tab4 = st.tabs(["📊 Normwerte", "🧊 3D-Korrelation", "📈 2D-Verläufe", "📋 Formeln"])
+st.subheader("Schritt 2 – Patientenmesswerte eingeben")
+st.markdown(
+    "Die Felder sind mit den **Idealwerten** vorbelegt. "
+    "Tragen Sie die tatsächlich gemessenen Werte des Patienten ein."
+)
 
-# ── Tab 1: Normwerte des Patienten ─────────────────────────────────────────
+gemessen: dict[str, float] = {}
+cols_main = st.columns(len(GRUPPEN))
+
+for col, (gruppe, variablen) in zip(cols_main, GRUPPEN.items()):
+    with col:
+        st.markdown(f"**{gruppe}**")
+        for var in variablen:
+            einheit = EINHEITEN.get(var, "")
+            gemessen[var] = st.number_input(
+                f"{var} ({einheit})",
+                value=float(ideal[var]),
+                step=0.5,
+                key=f"input_{var}",
+                format="%.2f",
+            )
+
+st.divider()
+
+# ---------------------------------------------------------------------------
+# Schritt 3 – Abweichungsanalyse
+# ---------------------------------------------------------------------------
+abweichungen = compute_abweichungen(gemessen, ideal)
+df_abw = pd.DataFrame([{
+    "Variable":   a.variable,
+    "Ideal":      a.ideal,
+    "Gemessen":   a.gemessen,
+    "Δ absolut":  round(a.delta, 2),
+    "Δ in SD":    round(a.delta_sd, 2),
+    "Einheit":    a.einheit,
+    "Status":     a.status,
+    "Farbe":      STATUS_FARBE[a.status],
+} for a in abweichungen])
+
+tab1, tab2, tab3, tab4 = st.tabs(
+    ["📊 Abweichungsübersicht", "🧊 3D Harmonieraum", "📋 Wertetabelle", "📐 Formeln"]
+)
+
+# ── Tab 1: Abweichungs-Balkendiagramm ──────────────────────────────────────
 with tab1:
-    st.subheader(f"Normwerte für SNA = {sna}°  |  PgNB = {pgnb} mm")
+    st.subheader("Abweichung vom individuellen Ideal (in SD-Einheiten)")
+    st.caption("Grün ≤ 1 SD  |  Orange 1–2 SD  |  Rot > 2 SD  |  Gestrichelt = ±2 SD-Grenze")
 
-    col1, col2, col3 = st.columns(3)
+    fig_bar = go.Figure()
 
-    with col1:
-        st.markdown("**Skelettale Basis**")
-        for key in ["SNA", "SNB", "ANB", "NL-NSL", "NSBa", "ML-NSL", "ML-NL"]:
-            val = patient[key]
-            unit = "°"
-            st.metric(key, f"{val} {unit}")
-
-    with col2:
-        st.markdown("**Dentale Normwerte**")
-        for key in ["1-NA_mm", "1-NA_deg", "1-NB_mm", "1-NB_deg", "H-Winkel", "Nasolabialwinkel", "Z-Winkel"]:
-            val = patient[key]
-            unit = "mm" if key.endswith("_mm") else "°"
-            st.metric(key, f"{val} {unit}")
-
-    with col3:
-        st.markdown("**Zahnbogen & Indices**")
-        for key in ["HZB", "VZB", "Eckzahn-OK", "Pont-SI-OK", "Pont-SI-UK"]:
-            val = patient[key]
-            st.metric(key, f"{val} mm")
-        if patient["Izard-Index"] is not None:
-            st.metric("Izard-Index", f"{patient['Izard-Index']:.4f}")
-
-# ── Tab 2: 3D-Korrelation ───────────────────────────────────────────────────
-with tab2:
-    st.subheader("3D-Korrelationsplot über den gesamten SNA-Bereich (62°–103°)")
-    st.caption(f"Achsen: {x_var} × {y_var} × {z_var}  |  Farbe: {color_var}")
-
-    # PgNB-Varianz: erzeuge Datenpunkte über SNA × PgNB-Raster
-    pgnb_werte = np.arange(0.5, 6.0, 0.5)
-    rows = []
-    for sna_i in range(62, 104):
-        for pg_i in pgnb_werte:
-            r = compute_harmonie_normwerte(float(sna_i), pgnb_mm=float(pg_i))
-            r["PgNB_label"] = f"{pg_i:.1f}"
-            rows.append(r)
-    df_3d = pd.DataFrame(rows)
-
-    fig3d = px.scatter_3d(
-        df_3d,
-        x=x_var,
-        y=y_var,
-        z=z_var,
-        color=color_var,
-        opacity=0.6,
-        color_continuous_scale="Viridis",
-        hover_data=["SNA", "ANB", "PgNB_mm"],
-        labels={x_var: x_var, y_var: y_var, z_var: z_var},
-    )
-    # Patientenpunkt hervorheben
-    fig3d.add_trace(go.Scatter3d(
-        x=[patient[x_var]],
-        y=[patient[y_var]],
-        z=[patient[z_var]],
-        mode="markers",
-        marker=dict(size=10, color="red", symbol="diamond"),
-        name=f"Patient (SNA={sna}°)",
+    fig_bar.add_trace(go.Bar(
+        x=df_abw["Δ in SD"],
+        y=df_abw["Variable"],
+        orientation="h",
+        marker_color=df_abw["Farbe"].tolist(),
+        text=[
+            f"{row['Δ absolut']:+.2f} {row['Einheit']}  ({row['Δ in SD']:+.2f} SD)"
+            for _, row in df_abw.iterrows()
+        ],
+        textposition="outside",
+        hovertemplate=(
+            "<b>%{y}</b><br>"
+            "Ideal: %{customdata[0]}<br>"
+            "Gemessen: %{customdata[1]}<br>"
+            "Δ: %{customdata[2]:+.2f} SD"
+            "<extra></extra>"
+        ),
+        customdata=df_abw[["Ideal", "Gemessen", "Δ in SD"]].values,
     ))
-    fig3d.update_layout(height=650, margin=dict(l=0, r=0, t=30, b=0))
+
+    # ±1 SD und ±2 SD Linien
+    for x_val, dash, color in [(-2, "dash", "red"), (-1, "dot", "gray"),
+                                 (1, "dot", "gray"), (2, "dash", "red")]:
+        fig_bar.add_vline(x=x_val, line_dash=dash, line_color=color, line_width=1.5)
+
+    fig_bar.add_vrect(x0=-1, x1=1, fillcolor="#2ecc71", opacity=0.07, line_width=0)
+    fig_bar.add_vrect(x0=-2, x1=-1, fillcolor="#f39c12", opacity=0.07, line_width=0)
+    fig_bar.add_vrect(x0=1, x1=2, fillcolor="#f39c12", opacity=0.07, line_width=0)
+
+    fig_bar.update_layout(
+        height=550,
+        xaxis_title="Abweichung in Standardabweichungen (SD)",
+        yaxis_title="",
+        xaxis=dict(range=[-4, 4], zeroline=True, zerolinewidth=2, zerolinecolor="black"),
+        plot_bgcolor="white",
+        margin=dict(l=10, r=180, t=30, b=40),
+    )
+    st.plotly_chart(fig_bar, use_container_width=True)
+
+    # Kennzahlen-Zusammenfassung
+    c1, c2, c3 = st.columns(3)
+    n_ok    = (df_abw["Status"] == "ok").sum()
+    n_grenz = (df_abw["Status"] == "grenz").sum()
+    n_auf   = (df_abw["Status"] == "auffällig").sum()
+    c1.metric("Im Normbereich (≤1 SD)", n_ok)
+    c2.metric("Grenzbereich (1–2 SD)", n_grenz)
+    c3.metric("Auffällig (>2 SD)", n_auf)
+
+# ── Tab 2: 3D Harmonieraum ──────────────────────────────────────────────────
+with tab2:
+    st.subheader("3D Harmonieraum – Patient im SD-Koordinatensystem")
+    st.caption(
+        "Jede Achse zeigt die Abweichung einer Variable vom Ideal in SD-Einheiten. "
+        "Der Ursprung (0,0,0) = perfekte Harmonie."
+    )
+
+    alle_vars = df_abw["Variable"].tolist()
+    col_a, col_b, col_c = st.columns(3)
+    with col_a:
+        x_var = st.selectbox("X-Achse", alle_vars, index=0)
+    with col_b:
+        y_var = st.selectbox("Y-Achse", alle_vars, index=2)
+    with col_c:
+        z_var = st.selectbox("Z-Achse", alle_vars, index=4)
+
+    def get_delta_sd(var: str) -> float:
+        row = df_abw[df_abw["Variable"] == var].iloc[0]
+        return float(row["Δ in SD"])
+
+    px_val = get_delta_sd(x_var)
+    py_val = get_delta_sd(y_var)
+    pz_val = get_delta_sd(z_var)
+
+    # SD-Kugeln (±1 SD und ±2 SD) als Drahtgitter-Sphären
+    def sphere_surface(r: float, n: int = 30):
+        u = np.linspace(0, 2 * np.pi, n)
+        v = np.linspace(0, np.pi, n)
+        x = r * np.outer(np.cos(u), np.sin(v))
+        y = r * np.outer(np.sin(u), np.sin(v))
+        z = r * np.outer(np.ones(n), np.cos(v))
+        return x, y, z
+
+    fig3d = go.Figure()
+
+    for r, farbe, name, opacity in [
+        (1.0, "#2ecc71", "±1 SD", 0.08),
+        (2.0, "#e74c3c", "±2 SD", 0.05),
+    ]:
+        sx, sy, sz = sphere_surface(r)
+        fig3d.add_trace(go.Surface(
+            x=sx, y=sy, z=sz,
+            opacity=opacity,
+            colorscale=[[0, farbe], [1, farbe]],
+            showscale=False,
+            name=name,
+            hoverinfo="skip",
+        ))
+
+    # Achsenkreuz im Ursprung (Ideal)
+    for axis in [([-3, 3], [0, 0], [0, 0]),
+                 ([0, 0], [-3, 3], [0, 0]),
+                 ([0, 0], [0, 0], [-3, 3])]:
+        fig3d.add_trace(go.Scatter3d(
+            x=axis[0], y=axis[1], z=axis[2],
+            mode="lines",
+            line=dict(color="lightgray", width=1),
+            showlegend=False,
+            hoverinfo="skip",
+        ))
+
+    # Patientenpunkt
+    patient_farbe = STATUS_FARBE[
+        "auffällig" if abs(px_val) > 2 or abs(py_val) > 2 or abs(pz_val) > 2
+        else "grenz" if abs(px_val) > 1 or abs(py_val) > 1 or abs(pz_val) > 1
+        else "ok"
+    ]
+    fig3d.add_trace(go.Scatter3d(
+        x=[px_val], y=[py_val], z=[pz_val],
+        mode="markers+text",
+        marker=dict(size=12, color=patient_farbe, symbol="diamond"),
+        text=["Patient"],
+        textposition="top center",
+        name="Patient",
+        hovertemplate=(
+            f"<b>Patient</b><br>"
+            f"{x_var}: {px_val:+.2f} SD<br>"
+            f"{y_var}: {py_val:+.2f} SD<br>"
+            f"{z_var}: {pz_val:+.2f} SD<extra></extra>"
+        ),
+    ))
+
+    # Linie vom Ideal zum Patienten
+    fig3d.add_trace(go.Scatter3d(
+        x=[0, px_val], y=[0, py_val], z=[0, pz_val],
+        mode="lines",
+        line=dict(color=patient_farbe, width=4, dash="dash"),
+        showlegend=False,
+        hoverinfo="skip",
+    ))
+
+    # Idealpunkt
+    fig3d.add_trace(go.Scatter3d(
+        x=[0], y=[0], z=[0],
+        mode="markers",
+        marker=dict(size=8, color="navy"),
+        name="Ideal (Harmonie)",
+    ))
+
+    fig3d.update_layout(
+        height=650,
+        scene=dict(
+            xaxis_title=f"{x_var} (SD)",
+            yaxis_title=f"{y_var} (SD)",
+            zaxis_title=f"{z_var} (SD)",
+            xaxis=dict(range=[-3.5, 3.5]),
+            yaxis=dict(range=[-3.5, 3.5]),
+            zaxis=dict(range=[-3.5, 3.5]),
+        ),
+        margin=dict(l=0, r=0, t=30, b=0),
+        legend=dict(x=0.01, y=0.99),
+    )
     st.plotly_chart(fig3d, use_container_width=True)
 
-# ── Tab 3: 2D-Verläufe ─────────────────────────────────────────────────────
+# ── Tab 3: Wertetabelle ────────────────────────────────────────────────────
 with tab3:
-    st.subheader("Normwertverlauf über SNA (62°–103°)")
-    y_auswahl = st.multiselect(
-        "Variablen anzeigen",
-        alle_variablen,
-        default=["SNB", "ANB", "ML-NSL", "H-Winkel"],
+    st.subheader("Wertetabelle – Ideal vs. Gemessen")
+    display_df = df_abw[["Variable", "Einheit", "Ideal", "Gemessen", "Δ absolut", "Δ in SD", "Status"]].copy()
+    display_df["Δ in SD"] = display_df["Δ in SD"].map(lambda x: f"{x:+.2f}")
+    display_df["Δ absolut"] = display_df["Δ absolut"].map(lambda x: f"{x:+.2f}")
+
+    def highlight_status(row):
+        farbe = STATUS_FARBE.get(row["Status"], "white")
+        return [f"background-color: {farbe}22" if col == "Status" else "" for col in row.index]
+
+    st.dataframe(
+        display_df.style.apply(highlight_status, axis=1),
+        use_container_width=True,
+        hide_index=True,
     )
-    if y_auswahl:
-        fig2d = px.line(
-            df,
-            x="SNA",
-            y=y_auswahl,
-            markers=True,
-            labels={"value": "Wert", "variable": "Variable"},
-        )
-        # Patientenwert markieren
-        fig2d.add_vline(x=sna, line_dash="dash", line_color="red", annotation_text=f"Patient SNA={sna}°")
-        fig2d.update_layout(height=500)
-        st.plotly_chart(fig2d, use_container_width=True)
+
+    st.download_button(
+        "⬇ Als CSV herunterladen",
+        data=df_abw.to_csv(index=False).encode("utf-8"),
+        file_name="harmonie_analyse.csv",
+        mime="text/csv",
+    )
 
 # ── Tab 4: Formeln ──────────────────────────────────────────────────────────
 with tab4:
-    st.subheader("Verwendete Regressionsformeln")
-    for name, formel in FORMELN.items():
-        st.markdown(f"**{name}** = `{formel}`")
+    st.subheader("Verwendete Regressionsformeln (Segner/Hasund)")
+    st.markdown(f"**SNA = {sna}°  |  PgNB = {pgnb} mm**")
+    st.divider()
+    col_f1, col_f2 = st.columns(2)
+    items = list(FORMELN.items())
+    for i, (name, formel) in enumerate(items):
+        col = col_f1 if i < len(items) // 2 else col_f2
+        sd  = STANDARD_ABWEICHUNGEN.get(name, "–")
+        col.markdown(f"**{name}** = `{formel}`  \n_SD = ±{sd} {EINHEITEN.get(name, '')}_")
