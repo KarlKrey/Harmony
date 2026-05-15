@@ -33,6 +33,29 @@ st.set_page_config(page_title="3D Korrelationsanalyse nach Prof. Krey", page_ico
 st.title("3D Korrelationsanalyse nach Prof. Krey")
 st.caption("basierend auf individualisierten Analysen nach Hasund/Segner, Paddenberg und Bernabe")
 
+with st.expander("ℹ️ Kurzanleitung"):
+    st.markdown("""
+**Grundprinzip:** Aus dem gemessenen **SNA-Winkel** werden individualisierte Normwerte (Idealwerte)
+für alle kephalometrischen Variablen berechnet. Die Abweichung der Patientenmesswerte vom Ideal
+wird in Standardabweichungen (SD) ausgedrückt und farblich dargestellt.
+
+**Ablauf:**
+1. **SNA eingeben** – der zentrale Ausgangswert (Seitenleiste, oben)
+2. **PgNB eingeben** – bestimmt die dentalen Idealwerte (Seitenleiste)
+3. **Messwerte eintragen** – in den vier Spalten (Skelettale Basis, Dentale Variablen, Weichteil, Zahnbogen)
+4. **Ergebnisse ablesen** – im Tab *Abweichungsübersicht* und im *Prisma-Harmonietabelle*
+
+**Farbcode:**
+🟢 ≤ 1 SD — im Normbereich &nbsp;|&nbsp; 🟡 1–2 SD — Grenzbereich &nbsp;|&nbsp; 🔴 > 2 SD — auffällig
+
+**Prisma-Harmonietabelle:** Die Kugeln zeigen die Patientenwerte in der Harmonietabelle.
+Ihre vertikale Position entspricht dem SNA-Wert, bei dem der Idealwert dem Messwert am nächsten liegt.
+Die Farbe der Kugel zeigt die Abweichung vom individualisierten Ideal des Patienten.
+Die **cyan markierte Zeile** ist der SNA des Patienten, der **goldene Cursor** ist frei verschiebbar.
+
+**Abgeleitete Werte** (ANB, ML-NL) werden automatisch aus den Eingaben berechnet.
+""")
+
 STATUS_FARBE = {"ok": "#2ecc71", "grenz": "#f39c12", "auffällig": "#e74c3c"}
 STATUS_LABEL = {"ok": "≤ 1 SD", "grenz": "1–2 SD", "auffällig": "> 2 SD"}
 
