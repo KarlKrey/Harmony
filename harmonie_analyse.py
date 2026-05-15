@@ -27,11 +27,12 @@ STANDARD_ABWEICHUNGEN: dict[str, float] = {
     "H-Winkel":         4.0,   # Grad
     "Nasolabialwinkel": 8.0,   # Grad (höhere Variabilität Weichteil)
     "Z-Winkel":         5.0,   # Grad
+    "Jochbeinbreite":   5.0,   # mm  (nach Izard, aus HZB abgeleitet)
     "HZB":              3.0,   # mm
     "VZB":              3.0,   # mm
     "Eckzahn-OK":       2.5,   # mm
-    "Pont-SI-OK":       3.5,   # mm
-    "Pont-SI-UK":       3.5,   # mm
+    "SI-OK":            2.0,   # mm  (Schneidezahnindex OK, Pont-Umkehr)
+    "SI-UK":            1.5,   # mm  (Schneidezahnindex UK, Tonn-Relation)
 }
 
 # Einheiten für Anzeige
@@ -49,19 +50,20 @@ EINHEITEN: dict[str, str] = {
     "H-Winkel":         "°",
     "Nasolabialwinkel": "°",
     "Z-Winkel":         "°",
+    "Jochbeinbreite":   "mm",
     "HZB":              "mm",
     "VZB":              "mm",
     "Eckzahn-OK":       "mm",
-    "Pont-SI-OK":       "mm",
-    "Pont-SI-UK":       "mm",
+    "SI-OK":            "mm",
+    "SI-UK":            "mm",
 }
 
 # Eingabevariablen (gemessene Werte – ANB und ML-NL werden berechnet)
 GRUPPEN: dict[str, list[str]] = {
-    "Skelettale Basis": ["SNB", "NL-NSL", "NSBa", "ML-NSL"],
+    "Skelettale Basis": ["SNB", "NSBa", "NL-NSL", "ML-NSL"],
     "Dentale Variablen": ["1-NA_deg", "1-NA_mm", "1-NB_deg", "1-NB_mm", "H-Winkel"],
-    "Weichteil": ["Nasolabialwinkel", "Z-Winkel"],
-    "Zahnbogen": ["HZB", "VZB", "Eckzahn-OK", "Pont-SI-OK", "Pont-SI-UK"],
+    "Weichteil": ["Nasolabialwinkel", "Z-Winkel", "Jochbeinbreite"],
+    "Zahnbogen": ["HZB", "VZB", "Eckzahn-OK", "SI-OK", "SI-UK"],
 }
 
 # Abgeleitete (berechnete) Variablen
@@ -84,11 +86,12 @@ FORMELN: dict[str, str] = {
     "H-Winkel":         "1.0 × ANB − 1.3 × PgNB + 10.5",
     "Nasolabialwinkel": "145 − 0.42 × 1-NA°",
     "Z-Winkel":         "91 − (ANB × 1.2)",
+    "Jochbeinbreite":   "(HZB + 12) × 2 + 10  (nach Izard)",
     "HZB":              "a + b × SNA + b × SNB  (a: 30–40, b: 0.1–0.2)",
     "VZB":              "a + b × SNA + b × SNB  (a: 20–25, b: 0.1–0.2)",
     "Eckzahn-OK":       "20 + b × SNA  (b=0.1, nach Bernabe)",
-    "Pont-SI-OK":       "VZB × 100 / 80",
-    "Pont-SI-UK":       "VZB × 100 / 64",
+    "SI-OK":            "VZB × 80/100  (Pont umgekehrt: SI aus Bogenbreite)",
+    "SI-UK":            "SI-OK × 0.74  (Tonn-Relation)",
 }
 
 
@@ -156,8 +159,9 @@ def compute_ideal(
     hzb        = a_hzb + b_hzb * sna + b_hzb * snb
     vzb        = a_vzb + b_vzb * sna + b_vzb * snb
     eckzahn_ok = 20.0 + b_hzb * sna
-    pont_si_ok = vzb * 100.0 / 80.0
-    pont_si_uk = vzb * 100.0 / 64.0
+    si_ok = vzb * 80.0 / 100.0        # Pont umgekehrt: SI-OK aus Bogenbreite
+    si_uk = si_ok * 0.74              # Tonn-Relation: SI-UK/SI-OK = 0.74
+    jochbeinbreite = (hzb + 12.0) * 2.0 + 10.0   # nach Izard
 
     return {
         "SNB":              round(snb, 2),
@@ -176,8 +180,9 @@ def compute_ideal(
         "HZB":              round(hzb, 2),
         "VZB":              round(vzb, 2),
         "Eckzahn-OK":       round(eckzahn_ok, 2),
-        "Pont-SI-OK":       round(pont_si_ok, 2),
-        "Pont-SI-UK":       round(pont_si_uk, 2),
+        "SI-OK":            round(si_ok, 2),
+        "SI-UK":            round(si_uk, 2),
+        "Jochbeinbreite":   round(jochbeinbreite, 2),
     }
 
 

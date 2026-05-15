@@ -1,6 +1,6 @@
 """
-3D Harmonic Korrelation nach Prof. Krey
-========================================
+3D Korrelationsanalyse nach Prof. Krey
+======================================
 Workflow:
   1. SNA + PgNB → individuelles Ideal berechnen
   2. Patientenmesswerte eingeben
@@ -29,9 +29,9 @@ from harmonie_analyse import (
 from paddenberg_floating_norms import paddenberg_analyse
 
 # ---------------------------------------------------------------------------
-st.set_page_config(page_title="3D Harmonic Korrelation", page_icon="🦷", layout="wide")
-st.title("3D Harmonic Korrelation nach Prof. Krey")
-st.caption("Individualisierte kephalometrische Strukturanalyse nach Segner/Hasund & Paddenberg")
+st.set_page_config(page_title="3D Korrelationsanalyse nach Prof. Krey", page_icon="🦷", layout="wide")
+st.title("3D Korrelationsanalyse nach Prof. Krey")
+st.caption("basierend auf individualisierten Analysen nach Hasund/Segner, Paddenberg und Bernabe")
 
 STATUS_FARBE = {"ok": "#2ecc71", "grenz": "#f39c12", "auffällig": "#e74c3c"}
 STATUS_LABEL = {"ok": "≤ 1 SD", "grenz": "1–2 SD", "auffällig": "> 2 SD"}
@@ -43,20 +43,9 @@ PRISM_FACES = [
     {"name": "Dentale Variablen", "y": 10, "color": "rgba(46,139,87,0.18)",   "line": "#3CB371",
      "vars": ["1-NA_deg", "1-NA_mm", "1-NB_deg", "1-NB_mm", "H-Winkel"]},
     {"name": "Weichteil",          "y": 20, "color": "rgba(204,112,0,0.18)",   "line": "#FFA500",
-     "vars": ["Nasolabialwinkel", "Z-Winkel"]},
+     "vars": ["Nasolabialwinkel", "Z-Winkel", "Jochbeinbreite"]},
     {"name": "Modell",             "y": 30, "color": "rgba(106,13,173,0.18)",  "line": "#9370DB",
-     "vars": ["HZB", "VZB", "Eckzahn-OK", "Pont-SI-OK", "Pont-SI-UK"]},
-]
-
-KATEGORIEN_3D = [
-    {"name": "FRS (Fernröntgen)", "z":  0, "color": "rgba(100,149,237,0.18)", "line": "#4169E1",
-     "vars": ["SNB", "ANB", "NL-NSL", "NSBa", "ML-NSL", "ML-NL"]},
-    {"name": "Dentale Variablen","z":  7, "color": "rgba(60,179,113,0.18)",  "line": "#2E8B57",
-     "vars": ["1-NA_deg", "1-NA_mm", "1-NB_deg", "1-NB_mm", "H-Winkel"]},
-    {"name": "Weichteil",        "z": 14, "color": "rgba(255,140,0,0.18)",   "line": "#CC7000",
-     "vars": ["Nasolabialwinkel", "Z-Winkel"]},
-    {"name": "Modell",           "z": 21, "color": "rgba(147,112,219,0.18)", "line": "#6A0DAD",
-     "vars": ["HZB", "VZB", "Eckzahn-OK", "Pont-SI-OK", "Pont-SI-UK"]},
+     "vars": ["HZB", "VZB", "Eckzahn-OK", "SI-OK", "SI-UK"]},
 ]
 
 # ---------------------------------------------------------------------------
@@ -109,10 +98,63 @@ for col_ui, (gruppe, variablen) in zip(st.columns(len(GRUPPEN)), GRUPPEN.items()
     with col_ui:
         st.markdown(f"**{gruppe}**")
         for var in variablen:
-            gemessen[var] = st.number_input(
-                f"{var} ({EINHEITEN.get(var,'')})",
-                value=float(ideal[var]), step=0.5, key=f"inp_{var}", format="%.2f",
-            )
+            ideal_val = ideal[var]
+            c_inp, c_ref = st.columns([3, 2])
+            with c_inp:
+                gemessen[var] = st.number_input(
+                    f"{var} ({EINHEITEN.get(var,'')})",
+                    value=float(ideal_val), step=0.5, key=f"inp_{var}", format="%.2f",
+                )
+            with c_ref:
+                st.markdown(
+                    f"<p style='margin-top:30px;font-size:14px;line-height:1.2'>"
+                    f"<b>{ideal_val:.1f}</b>&nbsp;{EINHEITEN.get(var,'')}</p>",
+                    unsafe_allow_html=True,
+                )
+            # ML-NL nach ML-NSL (letztem Eintrag der skelettalen Basis)
+            if var == "ML-NSL":
+                mlnl_val   = gemessen["ML-NSL"] - gemessen["NL-NSL"]
+                mlnl_ideal = ideal["ML-NL"]
+                mlnl_dev   = (mlnl_val - mlnl_ideal) / STANDARD_ABWEICHUNGEN["ML-NL"]
+                mlnl_st    = "auffällig" if abs(mlnl_dev) > 2 else ("grenz" if abs(mlnl_dev) > 1 else "ok")
+                c_m, c_m2  = st.columns([3, 2])
+                with c_m:
+                    st.markdown(
+                        f"<div style='background:{STATUS_FARBE[mlnl_st]}33;border-left:3px solid "
+                        f"{STATUS_FARBE[mlnl_st]};padding:4px 8px;border-radius:3px;"
+                        f"font-size:14px;margin-bottom:4px'>"
+                        f"<b>ML-NL</b> = {mlnl_val:.1f}°"
+                        f"<span style='font-size:11px;color:#aaa'> ({mlnl_dev:+.1f} SD)</span></div>",
+                        unsafe_allow_html=True,
+                    )
+                with c_m2:
+                    st.markdown(
+                        f"<p style='margin-top:4px;font-size:14px;line-height:1.2'>"
+                        f"<b>{mlnl_ideal:.1f}</b>&nbsp;°</p>",
+                        unsafe_allow_html=True,
+                    )
+            # ANB direkt nach SNB als abgeleitete Variable anzeigen
+            if var == "SNB":
+                anb_val   = sna - gemessen["SNB"]
+                anb_ideal = ideal["ANB"]
+                anb_dev   = (anb_val - anb_ideal) / STANDARD_ABWEICHUNGEN["ANB"]
+                anb_st    = "auffällig" if abs(anb_dev) > 2 else ("grenz" if abs(anb_dev) > 1 else "ok")
+                c_a, c_a2 = st.columns([3, 2])
+                with c_a:
+                    st.markdown(
+                        f"<div style='background:{STATUS_FARBE[anb_st]}33;border-left:3px solid "
+                        f"{STATUS_FARBE[anb_st]};padding:4px 8px;border-radius:3px;"
+                        f"font-size:14px;margin-bottom:4px'>"
+                        f"<b>ANB</b> = {anb_val:.1f}°"
+                        f"<span style='font-size:11px;color:#aaa'> ({anb_dev:+.1f} SD)</span></div>",
+                        unsafe_allow_html=True,
+                    )
+                with c_a2:
+                    st.markdown(
+                        f"<p style='margin-top:4px;font-size:14px;line-height:1.2'>"
+                        f"<b>{anb_ideal:.1f}</b>&nbsp;°</p>",
+                        unsafe_allow_html=True,
+                    )
 
 # Abgeleitete Variablen berechnen
 gemessen["ANB"]   = sna - gemessen["SNB"]
@@ -168,18 +210,12 @@ df_abw = pd.DataFrame([{
     "Einheit": a.einheit, "Status": a.status, "Farbe": STATUS_FARBE[a.status],
 } for a in abweichungen])
 
-kategorien_3d = [dict(k, vars=list(k["vars"])) for k in KATEGORIEN_3D]
-if pdb_erg is not None:
-    kategorien_3d[0]["vars"] = ["ANB (Paddenberg)", "Wits"] + kategorien_3d[0]["vars"]
-
 # ---------------------------------------------------------------------------
 # Tabs
 # ---------------------------------------------------------------------------
-tab1, tab2, tab3, tab4, tab5 = st.tabs([
+tab1, tab2, tab3 = st.tabs([
     "📊 Abweichungsübersicht",
     "📐 Prisma-Harmonietabelle",
-    "🧊 3D Kategorieflächen",
-    "📋 Wertetabelle",
     "🔬 Formeln",
 ])
 
@@ -220,8 +256,9 @@ with tab2:
     st.caption(
         "Jede Fläche des Prismas = eine Messkategorie. "
         "Auf jeder Fläche stehen die **gerundeten Idealwerte** für SNA 62–103. "
-        "**Goldener Streifen** = verschiebbare Linie. "
-        "**Farbige Zahlen** = Patientenmesswerte (grün/orange/rot nach Abweichung)."
+        "**Goldener Streifen** = verschiebbare Cursorzahl (Ideal). "
+        "**Cyan gepunkteter Streifen** = Patient. "
+        "**Farbige Zahlen [...]** = Patientenmesswerte (grün/orange/rot nach Abweichung)."
     )
 
     col_sl, col_info = st.columns([3, 1])
@@ -268,7 +305,7 @@ with tab2:
         fig_p.add_trace(go.Scatter3d(
             x=[n_v / 2 - 0.5], y=[y_f], z=[n_sna + 0.5],
             mode="text", text=[f"<b>{face['name']}</b>"],
-            textfont=dict(size=13, color=col_l),
+            textfont=dict(size=16, color=col_l),
             showlegend=False, hoverinfo="skip",
         ))
 
@@ -278,7 +315,7 @@ with tab2:
             fig_p.add_trace(go.Scatter3d(
                 x=[j], y=[y_f], z=[n_sna - 0.2],
                 mode="text", text=[short],
-                textfont=dict(size=9, color=col_l),
+                textfont=dict(size=14, color=col_l),
                 showlegend=False, hoverinfo="skip",
             ))
 
@@ -293,7 +330,7 @@ with tab2:
         fig_p.add_trace(go.Scatter3d(
             x=sna_lbl_x, y=sna_lbl_y, z=sna_lbl_z,
             mode="text", text=sna_lbl_t,
-            textfont=dict(size=8, color="#aaa"),
+            textfont=dict(size=12, color="#aaa"),
             showlegend=False, hoverinfo="skip",
         ))
 
@@ -312,55 +349,63 @@ with tab2:
             fig_p.add_trace(go.Scatter3d(
                 x=norm_x, y=norm_y, z=norm_z,
                 mode="text", text=norm_t,
-                textfont=dict(size=8, color="white"),
+                textfont=dict(size=13, color="white"),
                 showlegend=False, hoverinfo="skip",
             ))
 
         # ── Cursor-Streifen (goldene Linie + Idealwerte in diesem SNA) ───
-        # Goldene Linie
         cx = np.linspace(-0.6, n_v - 0.4, n_v * 4)
+        # Wenn Cursor ≠ Patient: schmaler Goldstreifen mit Idealwerten
+        if cursor_idx != pat_idx:
+            fig_p.add_trace(go.Scatter3d(
+                x=cx, y=[y_f] * len(cx), z=[float(cursor_idx)] * len(cx),
+                mode="lines", line=dict(color="gold", width=4),
+                showlegend=False, hoverinfo="skip",
+            ))
+            cur_id = ideals_all[sna_cursor]
+            for j, var in enumerate(vars_f):
+                fig_p.add_trace(go.Scatter3d(
+                    x=[j], y=[y_f], z=[float(cursor_idx)],
+                    mode="text", text=[str(round(cur_id.get(var, 0)))],
+                    textfont=dict(size=14, color="gold"),
+                    showlegend=False, hoverinfo="skip",
+                ))
+
+        # ── Patient-SNA-Streifen (cyan, markiert die Patienten-SNA-Zeile) ──
         fig_p.add_trace(go.Scatter3d(
-            x=cx, y=[y_f] * len(cx), z=[float(cursor_idx)] * len(cx),
-            mode="lines", line=dict(color="gold", width=5),
+            x=cx, y=[y_f] * len(cx), z=[float(pat_idx)] * len(cx),
+            mode="lines", line=dict(color="cyan", width=8),
             showlegend=False, hoverinfo="skip",
         ))
-        # Idealwerte am Cursor
-        cur_id = ideals_all[sna_cursor]
-        for j, var in enumerate(vars_f):
-            fig_p.add_trace(go.Scatter3d(
-                x=[j], y=[y_f], z=[float(cursor_idx)],
-                mode="text", text=[str(round(cur_id.get(var, 0)))],
-                textfont=dict(size=10, color="gold"),
-                showlegend=False, hoverinfo="skip",
-            ))
 
-        # ── Patient-Zeile (Messwerte farbig, falls pat_idx ≠ cursor_idx) ─
-        if pat_idx != cursor_idx:
-            pat_ideal = ideals_all[sna_range[min(pat_idx, n_sna - 1)]]
-            # Patienten-Streifen (navy)
-            fig_p.add_trace(go.Scatter3d(
-                x=cx, y=[y_f] * len(cx), z=[float(pat_idx)] * len(cx),
-                mode="lines", line=dict(color="#4444ff", width=3, dash="dot"),
-                showlegend=False, hoverinfo="skip",
-            ))
-        else:
-            pat_ideal = cur_id
-
-        # Patientenmesswerte auf dem Patienten-Z
+        # ── Markierung des Messwerts in der Tabellenspalte ────────────────
+        # Für jede Variable: finde die Tabellenzeile, deren Idealwert dem
+        # Messwert am nächsten liegt, und markiere diese Zelle farbig.
+        pat_ideal_at_sna = ideals_all[sna_range[min(pat_idx, n_sna - 1)]]
         for j, var in enumerate(vars_f):
             if var not in gemessen or var not in STANDARD_ABWEICHUNGEN:
                 continue
-            meas = gemessen[var]
-            dev  = (meas - pat_ideal.get(var, meas)) / STANDARD_ABWEICHUNGEN[var]
-            status_p = ("auffällig" if abs(dev) > 2 else "grenz" if abs(dev) > 1 else "ok")
+            meas    = gemessen[var]
+            best_i  = min(range(n_sna),
+                          key=lambda i, v=var: abs(ideals_all[sna_range[i]].get(v, 0) - meas))
+            dev     = (meas - pat_ideal_at_sna.get(var, meas)) / STANDARD_ABWEICHUNGEN[var]
+            status_p = "auffällig" if abs(dev) > 2 else ("grenz" if abs(dev) > 1 else "ok")
+            col_p   = STATUS_FARBE[status_p]
+            sd_label = f"{dev:+.1f}"
             fig_p.add_trace(go.Scatter3d(
-                x=[j], y=[y_f], z=[float(pat_idx)],
-                mode="text", text=[f"[{round(meas)}]"],
-                textfont=dict(size=10, color=STATUS_FARBE[status_p]),
+                x=[j], y=[y_f], z=[float(best_i)],
+                mode="markers+text",
+                marker=dict(size=16, color=col_p, symbol="circle",
+                            line=dict(color="white", width=2), opacity=0.9),
+                text=[sd_label],
+                textfont=dict(size=11, color="white"),
+                textposition="middle center",
                 hovertemplate=(
                     f"<b>{var}</b><br>"
-                    f"Ideal: {pat_ideal.get(var, 0):.1f}<br>"
-                    f"Gemessen: {meas:.1f}<br>"
+                    f"Gemessen: {meas:.1f} {EINHEITEN.get(var, '')}<br>"
+                    f"Ideal (Pat. SNA={sna_range[min(pat_idx,n_sna-1)]}°): "
+                    f"{pat_ideal_at_sna.get(var, 0):.1f}<br>"
+                    f"Entspricht SNA ≈ {sna_range[best_i]}°<br>"
                     f"Δ: {dev:+.2f} SD<extra></extra>"
                 ),
                 showlegend=False,
@@ -392,115 +437,8 @@ with tab2:
     )
     st.plotly_chart(fig_p, use_container_width=True)
 
-    # Cursor-Werte als Tabelle unter dem Plot
-    st.markdown(f"**Idealwerte bei SNA = {sna_cursor}°** (Cursor-Position):")
-    rows_cur = []
-    for face in PRISM_FACES:
-        for var in face["vars"]:
-            val_ideal = cursor_ideal.get(var, 0)
-            val_meas  = gemessen.get(var, None)
-            dev_str   = ""
-            if val_meas is not None and var in STANDARD_ABWEICHUNGEN:
-                dev = (val_meas - val_ideal) / STANDARD_ABWEICHUNGEN[var]
-                dev_str = f"{dev:+.2f} SD"
-            rows_cur.append({
-                "Kategorie": face["name"], "Variable": var,
-                "Einheit":   EINHEITEN.get(var, ""),
-                "Ideal":     round(val_ideal, 1),
-                "Gemessen":  round(val_meas, 1) if val_meas is not None else "–",
-                "Δ SD":      dev_str,
-            })
-    st.dataframe(pd.DataFrame(rows_cur), use_container_width=True, hide_index=True)
-
-# ── Tab 3: 3D Kategorieflächen ──────────────────────────────────────────────
+# ── Tab 3: Formeln ──────────────────────────────────────────────────────────
 with tab3:
-    st.subheader("3D Harmonieraum – 4 Messflächen")
-    st.caption("Horizontale Ebenen = Kategorien. Y = Abweichung in SD. Harmonielinie bei Y=0.")
-
-    fig3d = go.Figure()
-    y_lim = 3.8
-    h_x, h_y, h_z = [], [], []
-
-    for kat in kategorien_3d:
-        z_cat = float(kat["z"])
-        vars_k = kat["vars"]
-        n = len(vars_k)
-        xp = np.linspace(-0.6, n - 0.4, 10)
-        yp = np.linspace(-y_lim, y_lim, 10)
-        Xp, Yp = np.meshgrid(xp, yp)
-        Zp = np.full_like(Xp, z_cat)
-        fig3d.add_trace(go.Surface(x=Xp, y=Yp, z=Zp,
-            colorscale=[[0, kat["color"]], [1, kat["color"]]],
-            showscale=False, hoverinfo="skip", name=kat["name"]))
-        fig3d.add_trace(go.Scatter3d(
-            x=[-0.6, n-0.4], y=[0, 0], z=[z_cat, z_cat],
-            mode="lines", line=dict(color=kat["line"], width=5),
-            showlegend=False, hoverinfo="skip"))
-        fig3d.add_trace(go.Scatter3d(
-            x=[(n-1)/2], y=[-y_lim-0.8], z=[z_cat],
-            mode="text", text=[f"<b>{kat['name']}</b>"],
-            textfont=dict(size=11, color=kat["line"]),
-            showlegend=False, hoverinfo="skip"))
-        for i, var in enumerate(vars_k):
-            rows = df_abw[df_abw["Variable"] == var]
-            if rows.empty:
-                h_x.append(i); h_y.append(0); h_z.append(z_cat)
-                continue
-            row = rows.iloc[0]
-            dsd, status = float(row["Δ in SD"]), row["Status"]
-            pt_col = STATUS_FARBE[status]
-            fig3d.add_trace(go.Scatter3d(
-                x=[i, i], y=[0, dsd], z=[z_cat, z_cat],
-                mode="lines", line=dict(color=pt_col, width=5),
-                showlegend=False, hoverinfo="skip"))
-            fig3d.add_trace(go.Scatter3d(
-                x=[i], y=[dsd], z=[z_cat], mode="markers",
-                marker=dict(size=10, color=pt_col, line=dict(color="white", width=1)),
-                name=var,
-                hovertemplate=(f"<b>{var}</b><br>Ideal: {row['Ideal']:.2f} {row['Einheit']}<br>"
-                               f"Gemessen: {row['Gemessen']:.2f} {row['Einheit']}<br>"
-                               f"Δ: {dsd:+.2f} SD  [{STATUS_LABEL[status]}]<extra></extra>"),
-                showlegend=False))
-            off = 0.35 if dsd >= 0 else -0.35
-            fig3d.add_trace(go.Scatter3d(
-                x=[i], y=[dsd + off], z=[z_cat + 0.6],
-                mode="text", text=[var], textfont=dict(size=8, color=pt_col),
-                showlegend=False, hoverinfo="skip"))
-            h_x.append(i); h_y.append(0); h_z.append(z_cat)
-        h_x.append(None); h_y.append(None); h_z.append(None)
-    fig3d.add_trace(go.Scatter3d(
-        x=h_x, y=h_y, z=h_z, mode="lines+markers",
-        line=dict(color="navy", width=3, dash="dot"),
-        marker=dict(size=4, color="navy"),
-        name="Harmonielinie (Y=0)"))
-    fig3d.update_layout(
-        height=700,
-        scene=dict(
-            xaxis=dict(title="Variable", showticklabels=False),
-            yaxis=dict(title="Abweichung (SD)", range=[-y_lim, y_lim]),
-            zaxis=dict(title="Kategorie",
-                       tickvals=[k["z"] for k in kategorien_3d],
-                       ticktext=[k["name"] for k in kategorien_3d]),
-            camera=dict(eye=dict(x=2.2, y=-2.0, z=1.4)),
-            bgcolor="white"),
-        margin=dict(l=0, r=0, t=30, b=0))
-    st.plotly_chart(fig3d, use_container_width=True)
-
-# ── Tab 4: Wertetabelle ────────────────────────────────────────────────────
-with tab4:
-    st.subheader("Wertetabelle – Ideal vs. Gemessen")
-    disp = df_abw[["Variable","Einheit","Ideal","Gemessen","Δ absolut","Δ in SD","Status"]].copy()
-    disp["Δ in SD"]   = disp["Δ in SD"].map(lambda x: f"{x:+.2f}")
-    disp["Δ absolut"] = disp["Δ absolut"].map(lambda x: f"{x:+.2f}")
-    def hl(row):
-        f = STATUS_FARBE.get(row["Status"], "white")
-        return [f"background-color:{f}22" if c == "Status" else "" for c in row.index]
-    st.dataframe(disp.style.apply(hl, axis=1), use_container_width=True, hide_index=True)
-    st.download_button("⬇ CSV", data=df_abw.to_csv(index=False).encode("utf-8"),
-                       file_name="harmonie_analyse.csv", mime="text/csv")
-
-# ── Tab 5: Formeln ──────────────────────────────────────────────────────────
-with tab5:
     c1, c2 = st.columns(2)
     items = list(FORMELN.items())
     for i, (name, formel) in enumerate(items):
