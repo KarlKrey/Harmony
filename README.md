@@ -1,5 +1,7 @@
 # Harmony
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 Individualisierte kephalometrische Strukturanalyse nach **Segner/Hasund** – interaktives 3D-Korrelationsdashboard.
 
 ## Funktionsumfang
