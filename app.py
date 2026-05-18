@@ -68,7 +68,7 @@ PRISM_FACES = [
     {"name": "Weichteil",          "y": 20, "color": "rgba(204,112,0,0.18)",   "line": "#FFA500",
      "vars": ["Nasolabialwinkel", "Z-Winkel", "Jochbeinbreite"]},
     {"name": "Modell",             "y": 30, "color": "rgba(106,13,173,0.18)",  "line": "#9370DB",
-     "vars": ["HZB", "VZB", "Eckzahn-OK", "SI-OK", "SI-UK"]},
+     "vars": ["HZB-OK", "VZB-OK", "Eckzahn-OK", "HZB-UK", "VZB-UK", "Eckzahn-UK", "SI-OK", "SI-UK"]},
 ]
 
 # ---------------------------------------------------------------------------
@@ -78,13 +78,6 @@ with st.sidebar:
     st.header("Schritt 1 – Treibervariablen")
     sna  = st.number_input("SNA (°)", min_value=62.0, max_value=103.0, value=82.0, step=0.5)
     pgnb = st.number_input("PgNB (mm)", min_value=0.0, max_value=10.0, value=2.3, step=0.1)
-
-    with st.expander("Zahnbogen-Konstanten (empirische Formel)"):
-        st.markdown("**HZB** = a + b·SNA + b·SNB  |  **Eckzahn OK** = 20 + b·SNA")
-        a_hzb = st.number_input("HZB – a", 25.0, 40.0, 30.0, 0.5, key="a_hzb")
-        b_hzb = st.number_input("b (HZB, VZB, Eckzahn)", 0.05, 0.25, 0.10, 0.01, key="b_hzb", format="%.2f")
-        st.markdown("**VZB** = a + b·SNA + b·SNB")
-        a_vzb = st.number_input("VZB – a", 15.0, 25.0, 20.0, 0.5, key="a_vzb")
 
     st.divider()
     with st.expander("Paddenberg Floating Norms"):
@@ -108,10 +101,7 @@ with st.sidebar:
 # ---------------------------------------------------------------------------
 # Ideal & Messwerte
 # ---------------------------------------------------------------------------
-# b_vzb = b_hzb (gleicher Koeffizient)
-b_vzb = b_hzb
-
-ideal = compute_ideal(sna, pgnb_mm=pgnb, a_hzb=a_hzb, b_hzb=b_hzb, a_vzb=a_vzb, b_vzb=b_vzb)
+ideal = compute_ideal(sna, pgnb_mm=pgnb)
 
 st.subheader("Schritt 2 – Patientenmesswerte")
 st.caption("ANB und ML-NL werden automatisch berechnet und müssen nicht eingegeben werden.")
@@ -291,14 +281,13 @@ with tab2:
         )
     with col_info:
         st.markdown(f"**SNA = {sna_cursor}°**")
-        cursor_ideal = compute_ideal(float(sna_cursor), pgnb_mm=pgnb,
-                                      a_hzb=a_hzb, b_hzb=b_hzb, a_vzb=a_vzb, b_vzb=b_vzb)
+        cursor_ideal = compute_ideal(float(sna_cursor), pgnb_mm=pgnb)
 
     # Vollständige Harmonietabelle vorberechnen
     sna_range = list(range(62, 104))
     n_sna = len(sna_range)
     ideals_all = {
-        s: compute_ideal(float(s), pgnb_mm=pgnb, a_hzb=a_hzb, b_hzb=b_hzb, a_vzb=a_vzb, b_vzb=b_vzb)
+        s: compute_ideal(float(s), pgnb_mm=pgnb)
         for s in sna_range
     }
     cursor_idx = sna_cursor - 62   # Z-Index des Cursors
