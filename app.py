@@ -617,7 +617,10 @@ Die **Prisma-Harmonietabelle** visualisiert die gesamte Analyse in 3D:
 - Shahroudi & Etezadi: J Dent Tehran 10(6):522–31, 2013
 - Wagner & Chung: AJO-DO 128(6):716–23, 2005
 - Subramanian et al.: Cureus 17(11):e96312, 2025
-- Pont A: *Der Zahnindex in der Orthodontie*, ZfStomK 1909
-- Tonn P: *Zur Frage des Tonn'schen Zahnindex*, 1937
-- Izard G: *Orthodontie*, 1950 (Jochbeinbreite)
+- Pont A: *Der Zahn-Index in der Orthodontie* Zeitschr Zahnärztl Orthop.
+1909;3(1):306-21.
+- Tonn P: *Über die mesio-distalen Zahnbreiten-Relationen der Zähne des
+Oberkiefers zu den entsprechenden des Unterkiefers bei normaler und anormaler
+Okklusion* [Dissertation]. Berlin: Friedrich-Wilhelms-Universität zu Berlin; 1937.
+- Izard G: *Orthodontie*(Orthopédie dento-faciale), 1950 (Jochbeinbreite)
 """)
