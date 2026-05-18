@@ -31,7 +31,7 @@ from paddenberg_floating_norms import paddenberg_analyse
 # ---------------------------------------------------------------------------
 st.set_page_config(page_title="3D Korrelationsanalyse nach Prof. Krey", page_icon="🦷", layout="wide")
 st.title("3D Korrelationsanalyse nach Prof. Krey")
-st.caption("basierend auf individualisierten Analysen nach Hasund/Segner, Paddenberg und Bernabe")
+st.caption("basierend auf individualisierten Analysen nach Hasund/Segner und Paddenberg")
 
 with st.expander("ℹ️ Kurzanleitung"):
     st.markdown("""
@@ -79,7 +79,7 @@ with st.sidebar:
     sna  = st.number_input("SNA (°)", min_value=62.0, max_value=103.0, value=82.0, step=0.5)
     pgnb = st.number_input("PgNB (mm)", min_value=0.0, max_value=10.0, value=2.3, step=0.1)
 
-    with st.expander("Zahnbogen-Konstanten (Bernabe)"):
+    with st.expander("Zahnbogen-Konstanten (empirische Formel)"):
         st.markdown("**HZB** = a + b·SNA + b·SNB  |  **Eckzahn OK** = 20 + b·SNA")
         a_hzb = st.number_input("HZB – a", 25.0, 40.0, 30.0, 0.5, key="a_hzb")
         b_hzb = st.number_input("b (HZB, VZB, Eckzahn)", 0.05, 0.25, 0.10, 0.01, key="b_hzb", format="%.2f")

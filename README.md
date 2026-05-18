@@ -19,7 +19,7 @@ Individualisierte kephalometrische Strukturanalyse nach **Segner/Hasund** – in
 | Skelettale Basis | SNB, ANB, NL-NSL, NSBa, ML-NSL, ML-NL |
 | Dentale Normwerte | 1-NA (mm/°), 1-NB (mm/°), H-Winkel |
 | Weichteil | Nasolabialwinkel, Z-Winkel (Holdaway) |
-| Zahnbogen | HZB, VZB, Eckzahn-OK (Bernabe) |
+| Zahnbogen | HZB, VZB, Eckzahn-OK (empirische Formel) |
 | Indices | Pont SI-OK/SI-UK, Tonn-Ratio, Izard-Index |
 
 ## Quickstart
@@ -32,6 +32,6 @@ streamlit run app.py
 ## Quellen
 
 - Segner D, Hasund A: *Individualisierte Kephalometrie*
-- Bernabe et al.: Eckzahnabstand-Formel
+- Eckzahnabstand: empirische Formel (HZB/VZB-basiert)
 - Pont: Zahnbogenindizes
 - Holdaway: H-Winkel, Z-Winkel

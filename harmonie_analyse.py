@@ -89,7 +89,7 @@ FORMELN: dict[str, str] = {
     "Jochbeinbreite":   "(HZB + 12) × 2 + 10  (nach Izard)",
     "HZB":              "a + b × SNA + b × SNB  (a: 30–40, b: 0.1–0.2)",
     "VZB":              "a + b × SNA + b × SNB  (a: 20–25, b: 0.1–0.2)",
-    "Eckzahn-OK":       "20 + b × SNA  (b=0.1, nach Bernabe)",
+    "Eckzahn-OK":       "20 + b × SNA  (b=0.1, empirische Formel)",
     "SI-OK":            "VZB × 80/100  (Pont umgekehrt: SI aus Bogenbreite)",
     "SI-UK":            "SI-OK × 0.74  (Tonn-Relation)",
 }
