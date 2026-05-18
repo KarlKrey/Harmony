@@ -64,9 +64,9 @@ PRISM_FACES = [
     {"name": "FRS (Fernröntgen)",  "y":  0, "color": "rgba(65,105,225,0.18)",  "line": "#6495ED",
      "vars": ["SNB", "ANB", "NL-NSL", "NSBa", "ML-NSL", "ML-NL"]},
     {"name": "Dentale Variablen", "y": 10, "color": "rgba(46,139,87,0.18)",   "line": "#3CB371",
-     "vars": ["1-NA_deg", "1-NA_mm", "1-NB_deg", "1-NB_mm", "H-Winkel"]},
+     "vars": ["1-NA_deg", "1-NA_mm", "1-NB_deg", "1-NB_mm"]},
     {"name": "Weichteil",          "y": 20, "color": "rgba(204,112,0,0.18)",   "line": "#FFA500",
-     "vars": ["Nasolabialwinkel", "Z-Winkel", "Jochbeinbreite"]},
+     "vars": ["H-Winkel", "Nasolabialwinkel", "Z-Winkel", "Jochbeinbreite"]},
     {"name": "Modell",             "y": 30, "color": "rgba(106,13,173,0.18)",  "line": "#9370DB",
      "vars": ["HZB-OK", "VZB-OK", "Eckzahn-OK", "HZB-UK", "VZB-UK", "Eckzahn-UK", "SI-OK", "SI-UK"]},
 ]

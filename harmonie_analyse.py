@@ -24,7 +24,7 @@ STANDARD_ABWEICHUNGEN: dict[str, float] = {
     "1-NA_mm":          2.5,   # mm
     "1-NB_deg":         4.5,   # Grad
     "1-NB_mm":          2.5,   # mm
-    "H-Winkel":         4.0,   # Grad
+    "H-Winkel":         3.2,   # Grad (S.E. aus Segner/Hasund Tab.)
     "Nasolabialwinkel": 8.0,   # Grad (höhere Variabilität Weichteil)
     "Z-Winkel":         5.0,   # Grad
     "Jochbeinbreite":   5.0,   # mm  (nach Izard, aus HZB-OK abgeleitet)
@@ -67,8 +67,8 @@ EINHEITEN: dict[str, str] = {
 # Eingabevariablen (gemessene Werte – ANB und ML-NL werden berechnet)
 GRUPPEN: dict[str, list[str]] = {
     "Skelettale Basis": ["SNB", "NSBa", "NL-NSL", "ML-NSL"],
-    "Dentale Variablen": ["1-NA_deg", "1-NA_mm", "1-NB_deg", "1-NB_mm", "H-Winkel"],
-    "Weichteil": ["Nasolabialwinkel", "Z-Winkel", "Jochbeinbreite"],
+    "Dentale Variablen": ["1-NA_deg", "1-NA_mm", "1-NB_deg", "1-NB_mm"],
+    "Weichteil": ["H-Winkel", "Nasolabialwinkel", "Z-Winkel", "Jochbeinbreite"],
     "Zahnbogen": ["HZB-OK", "VZB-OK", "Eckzahn-OK", "HZB-UK", "VZB-UK", "Eckzahn-UK", "SI-OK", "SI-UK"],
 }
 
