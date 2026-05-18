@@ -226,10 +226,11 @@ df_abw = pd.DataFrame([{
 # ---------------------------------------------------------------------------
 # Tabs
 # ---------------------------------------------------------------------------
-tab1, tab2, tab3 = st.tabs([
+tab1, tab2, tab3, tab4 = st.tabs([
     "📊 Abweichungsübersicht",
     "📐 Prisma-Harmonietabelle",
     "🔬 Formeln",
+    "📖 Erklärung",
 ])
 
 # ── Tab 1: Balkendiagramm ───────────────────────────────────────────────────
@@ -466,4 +467,157 @@ with tab3:
 | ANB B | −41.669 + 0.567·SNA + 0.110·ML-NSL + 0.114·NSBa + 0.132·NL-NSL + 0.062·Index − 0.289·Faz. | 0.690 |
 | Wits C ★ | 57.510 + 1.526·ANB − 0.634·SNA − 0.666·SN-Occl | 0.976 |
 | Wits D | 57.853 + 1.572·ANB − 0.664·SNA − 0.639·SN-Occl − 0.030·ML-NSL + 0.030·Index | 0.984 |
+""")
+
+# ── Tab 4: Erklärung ────────────────────────────────────────────────────────
+with tab4:
+    st.markdown("""
+## Grundprinzip: Individualisierte Kephalometrie
+
+Klassische kephalometrische Analysen vergleichen Patientenwerte mit festen
+Populationsdurchschnittswerten (z. B. ANB = 2°, SNB = 78°). Dieser Ansatz ignoriert,
+dass ein Patient mit SNA = 88° strukturell anders aufgebaut ist als einer mit SNA = 76° —
+und dennoch harmonisch sein kann.
+
+**Hasund und Segner** (Hamburg, 1994) entwickelten das Konzept der **fließenden Normen
+(Floating Norms):** Der Idealwert einer Variablen wird nicht aus einer festen Tabelle
+abgelesen, sondern individuell für jeden Patienten aus dem SNA-Winkel berechnet.
+Dahinter stecken Regressionsgleichungen, die an harmonischen Gesichtern ermittelt wurden.
+
+---
+
+## Schritt 1 – SNA als Ausgangsgröße
+
+**SNA** (Sella–Nasion–A-Punkt) beschreibt die sagittale Lage der Oberkieferbasis
+zur Schädelbasis. Er ist die zentrale Treibervariable:
+
+> Je größer SNA, desto prognathe Oberkieferposition → alle abhängigen Idealwerte
+> verschieben sich entsprechend.
+
+**PgNB** (Pogonion-Abstand zur NB-Linie) beschreibt die Kinnprominenz und beeinflusst
+die dentalen und ästhetischen Sollwerte.
+
+---
+
+## Schritt 2 – Berechnung der individualisierten Idealwerte
+
+Aus SNA (und PgNB) werden alle Idealwerte automatisch errechnet:
+
+### Skelettale Basis
+| Variable | Formel | Quelle |
+|----------|--------|--------|
+| SNB | 0.79 · SNA + 15.56 | Segner/Hasund |
+| ANB | SNA − SNB | (berechnet) |
+| NL-NSL | −0.34 · SNA + 35.5 | Segner/Hasund |
+| NSBa | −0.49 · SNA + 171.17 | Segner/Hasund |
+| ML-NSL | −0.70 · SNA + 86.05 | Segner/Hasund |
+| ML-NL | ML-NSL − NL-NSL | (berechnet) |
+
+Der **ANB-Winkel** ergibt sich direkt aus der Differenz der beiden Basispunkte.
+ML-NL beschreibt den **Divergenzwinkel** zwischen Ober- und Unterkieferbasis —
+ein wichtiger Indikator für den Gesichtstyp (hypo-/normo-/hyperdivergent).
+
+### Dentale Variablen
+Die Frontzahninclination und -protrusion werden aus **ANB** und **PgNB** berechnet:
+
+| Variable | Formel |
+|----------|--------|
+| 1-NA (°) | −2.19 · ANB − 0.61 · PgNB + 27.1 |
+| 1-NA (mm) | −0.86 · ANB − 0.23 · PgNB + 12.8 |
+| 1-NB (°) | 1.51 · ANB − 0.80 · PgNB + 22.4 |
+| 1-NB (mm) | 0.51 · ANB − 0.30 · PgNB + 10.4 |
+
+Bei großem ANB (skelettale Klasse II) sind stärker retroklinierte Oberkieferfrontzähne
+zu erwarten; bei kleinem PgNB (schwaches Kinn) schiebt der ideale Wert die
+Unterkieferfront nach labial, um die Weichteilbalance zu stützen.
+
+### Weichteil
+| Variable | Formel | Bedeutung |
+|----------|--------|-----------|
+| H-Winkel | 1.0 · ANB − 1.3 · PgNB + 10.5 | Holdaway-Winkel; Weichteilprofil-Ästhetik |
+| Nasolabialwinkel | 145 − 0.42 · 1-NA° | Nasenlippen-Winkel |
+| Z-Winkel | 91 − 1.2 · ANB | Merrifield-Profil-Winkel |
+| Jochbeinbreite | (HZB-OK + 12) · 2 + 10 | Bizygomatic width nach Izard |
+
+Der **H-Winkel** (Holdaway) ist ein besonders sensitiver Indikator für die
+Weichteil-Ästhetik. Er berücksichtigt sowohl die skelettale Klasse (ANB) als auch
+die Kinnprominenz (PgNB). Zielbereich: 7°–9°.
+
+### Transversale Zahnbogenbreiten
+Die Sollwerte werden aus FRS-Parametern nach dem Hasund-Analogprinzip abgeleitet
+(Quellen: Shahroudi & Etezadi 2013; Wagner & Chung 2005; Subramanian et al. 2025):
+
+| Variable | Formel |
+|----------|--------|
+| HZB-OK | 24 + 0.20·SNA + 0.20·SNB − 0.20·ML-NSL |
+| VZB-OK | 29 + 0.20·SNA − 0.15·ML-NSL |
+| Eckzahn-OK | 20 + 0.20·SNA − 0.10·ML-NSL |
+| HZB-UK | 26 + 0.10·SNA + 0.20·SNB − 0.20·ML-NSL |
+| VZB-UK | 18 + 0.10·SNA + 0.20·SNB − 0.15·ML-NSL |
+| Eckzahn-UK | 12 + 0.10·SNA + 0.20·SNB − 0.10·ML-NSL |
+
+**Hyperdivergente Patienten** (hohes ML-NSL) haben schmalere Zahnbögen als Erwarungswert —
+der negative Koeffizient von ML-NSL bildet dies ab.
+SI-OK (Schneidezahnindex OK) wird aus VZB-OK via Pont-Umkehr abgeleitet:
+SI-OK = VZB-OK × 0.80; SI-UK = SI-OK × 0.74 (Tonn-Relation).
+
+---
+
+## Schritt 3 – Eintragen der Patientenmesswerte
+
+In den vier Eingabespalten werden die gemessenen Werte des Patienten eingetragen.
+Rechts neben jedem Feld steht der berechnete Idealwert. ANB und ML-NL werden
+automatisch aus den Eingaben berechnet und nicht separat gemessen.
+
+---
+
+## Schritt 4 – Interpretation der Abweichungen
+
+Die Abweichung wird in **Standardabweichungen (SD)** ausgedrückt:
+
+> **Δ SD = (Messwert − Idealwert) / SD**
+
+Die SD-Werte stammen aus den Residualstreuungen der Originalregressionen
+(Segner/Hasund, Tab. 3/4) und beschreiben die biologische Variabilität
+harmonischer Gesichter um die Regressionsgerade.
+
+| Bereich | Farbe | Bedeutung |
+|---------|-------|-----------|
+| ≤ 1 SD | grün | Im individuellen Normbereich |
+| 1–2 SD | orange | Grenzbereich, klinisch beobachten |
+| > 2 SD | rot | Klinisch auffällig, Behandlungsbedarf prüfen |
+
+**Vorzeichen:** Positive Δ SD bedeutet, der Messwert liegt über dem Ideal;
+negativ bedeutet unter dem Ideal. Dies ist für die Behandlungsplanung
+wichtig (z. B. negative 1-NB-mm: Frontzahn zu weit lingual → Protrusion möglich).
+
+---
+
+## Prisma-Harmonietabelle
+
+Die **Prisma-Harmonietabelle** visualisiert die gesamte Analyse in 3D:
+
+- Die **Z-Achse** zeigt den SNA-Bereich (62°–103°)
+- Die **vier Flächen** entsprechen den Variablengruppen
+- Die **Harmonielinie** (farbige Punkte auf jeder Fläche) zeigt die Idealwerte
+  über den gesamten SNA-Bereich
+- Die **cyan markierte Zeile** ist die SNA-Zeile des aktuellen Patienten
+- Die **goldene Linie** ist ein frei verschiebbarer Vergleichscursor
+- **Farbige Kugeln** markieren die Patientenmesswerte: Die vertikale Position
+  der Kugel zeigt, bei welchem SNA-Wert das Ideal dem gemessenen Wert entspricht.
+  Die Farbe zeigt die Abweichung vom Ideal des Patienten (grün/orange/rot).
+
+---
+
+## Quellen
+
+- Segner D, Hasund A: *Individualisierte Kephalometrie*, 4. Aufl., Hamburg 1994
+- Paddenberg et al.: *Floating Norms for ANB and Wits*, J Orofac Orthop 2021
+- Holdaway RA: *A soft-tissue cephalometric analysis*, AJO 1984
+- Shahroudi & Etezadi: J Dent Tehran 10(6):522–31, 2013
+- Wagner & Chung: AJO-DO 128(6):716–23, 2005
+- Subramanian et al.: Cureus 17(11):e96312, 2025
+- Pont A: *Der Zahnindex in der Orthodontie*, ZfStomK 1909
+- Tonn P: *Zur Frage des Tonn'schen Zahnindex*, 1937
+- Izard G: *Orthodontie*, 1950 (Jochbeinbreite)
 """)
